@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Łukasz Bartkiewicz <lukasku@proton.me>
+// SPDX-License-Identifier: MPL-2.0
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -54,15 +57,15 @@ is_eof(Parser* p)
 }
 
 /************************@;
-| expr ::= \ var . expr
+§ expr ::= \ var . expr
 !       | app
 |
 ! app ::= app atom
-|       | atom
+       | atom
 !
 | atom ::= var | ( expr )
 !
-| var ::= [a-z]
+§ var ::= [a-z]
 #+**********************°*/
 
 Term*
@@ -193,17 +196,6 @@ print(Term* t) {
     }
 }
 
-static void
-free_term(Term* t) {
-    if (!t) return;
-    if (t->type == ABS) free_term(t->t.abs.body);
-    if (t->type == APP) {
-        free_term(t->t.app.lhs);
-        free_term(t->t.app.rhs);
-    }
-    free(t);
-}
-
 int
 main(void)
 {
@@ -217,6 +209,5 @@ main(void)
         printf("%s => ", tests[i]);
         print(t);
         printf("\n");
-        free_term(t);
     }
 }

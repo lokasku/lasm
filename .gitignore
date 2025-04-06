@@ -2,3 +2,5 @@
 # SPDX-License-Identifier: MPL-2.0
 
 .direnv/
+lasm
+*.o

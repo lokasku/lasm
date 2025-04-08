@@ -17,14 +17,7 @@ typedef struct {
     const char* input;
 } Parser;
 
-Term* make_term(int type);
-void skip(Parser* p);
-int is_alpha(char c);
-Term* parse_var(Parser* p);
-Term* parse_atom(Parser* p);
-Term* parse_app(Parser* p);
-
-Term* parse_expr(Parser* p);
-void free_term(Term* t);
+Term* parse_expr(Parser*, int);
+void free_term(Term*);
 
 #endif

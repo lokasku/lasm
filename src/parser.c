@@ -6,6 +6,13 @@
 #include <stdio.h>
 #include "parser.h"
 
+static Term* make_term(int);
+static void skip(Parser*);
+static int is_alpha(char);
+static Term* parse_var(Parser*);
+static Term* parse_atom(Parser*, int);
+static Term* parse_app(Parser*, int);
+
 /************************@;
 § expr ::= \ var . expr
 !       | app
@@ -15,7 +22,7 @@
 !
 | atom ::= var | ( expr )
 !
-§ var ::= [a-z]
+§ var ::= [a-zA-Z]
 #+**********************°*/
 
 Term*
@@ -50,15 +57,14 @@ free_term(Term* t)
 void
 skip(Parser* p)
 {
-    while (p->input[p->index] == ' '
-        || p->input[p->index] == '\n')
+    while (p->input[p->index] == ' ')
         p->index++;
 }
 
 int
 is_alpha(char c)
 {
-    return (c >= 'a' && c <= 'z');
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 Term*
@@ -77,7 +83,8 @@ parse_var(Parser* p)
 }
 
 Term*
-parse_atom(Parser* p)
+parse_atom(Parser* p,
+           int depth)
 {
     skip(p);
 
@@ -93,7 +100,7 @@ parse_atom(Parser* p)
 
     p->index++;
 
-    t = parse_expr(p);
+    t = parse_expr(p, depth + 1);
     if (!t) return NULL;
 
     skip(p);
@@ -107,11 +114,12 @@ parse_atom(Parser* p)
 }
 
 Term*
-parse_app(Parser* p)
+parse_app(Parser* p,
+          int depth)
 {
     skip(p);
 
-    Term* t = parse_atom(p);
+    Term* t = parse_atom(p, depth);
     if (!t) return NULL;
 
     while (1) {
@@ -122,7 +130,7 @@ parse_app(Parser* p)
                 && p->input[p->index] != '('))
             break;
 
-        Term* rhs = parse_atom(p);
+        Term* rhs = parse_atom(p, depth);
         if (!rhs) break;
 
         Term* _t = make_term(APP);
@@ -135,12 +143,21 @@ parse_app(Parser* p)
 }
 
 Term*
-parse_expr(Parser* p)
+parse_expr(Parser* p,
+           int depth)
 {
+    if (depth >= 1000) {
+        fprintf(stderr, "Maximum recursion depth exceeded\n");
+        return NULL;
+    }
+
     skip(p);
 
     if (p->input[p->index] == '\\') {
         p->index++;
+
+        skip(p);
+
         Term* var = parse_var(p);
         if (!var) return NULL;
         char var_name = var->var;
@@ -148,11 +165,10 @@ parse_expr(Parser* p)
 
         skip(p);
 
-        if (p->input[p->index] != '.')
-            return NULL;
+        if (p->input[p->index] != '.') return NULL;
         p->index++;
 
-        Term* body = parse_expr(p);
+        Term* body = parse_expr(p, depth + 1);
         if (!body) return NULL;
 
         Term* abs = make_term(ABS);
@@ -162,9 +178,8 @@ parse_expr(Parser* p)
         }
         abs->abs.var = var_name;
         abs->abs.body = body;
-
         return abs;
     }
 
-    return parse_app(p);
+    return parse_app(p, depth);
 }

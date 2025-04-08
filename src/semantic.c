@@ -3,7 +3,15 @@
 
 #include "semantic.h"
 
-static int occ[26] = {0};
+static int occ[52] = {0};
+
+static int
+var_index(char c)
+{
+    if (c >= 'a' && c <= 'z')
+        return c - 'a';
+    return (c - 'A') + 26;
+}
 
 int
 check(Term* t)
@@ -14,7 +22,7 @@ check(Term* t)
 
     switch (t->type) {
         case ABS:
-            i = t->abs.var - 'a';
+            i = var_index(t->abs.var);
             occ[i]++;
             if (check(t->abs.body)) {
                 occ[i]--;
@@ -24,7 +32,7 @@ check(Term* t)
         case APP:
             return check(t->app.lhs) && check(t->app.rhs);
         case VAR:
-            return occ[t->var - 'a'] > 0 ? 1 : 0;
+            return occ[var_index(t->var)] > 0 ? 1 : 0;
     }
     return 0;
 }
